@@ -1,0 +1,24 @@
+[package]
+name = "flaarino"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+futures = "0.3.19"
+twilight-gateway = "0.9.1"
+twilight-http = "0.9.1"
+twilight-model = "0.9.1"
+twilight-interactions = "0.9.0"
+dotenv = "0.15.0"
+twilight-embed-builder = "0.9.0"
+spwn = { git = "https://github.com/Spu7Nix/SPWN-language.git", rev = "466d63e5d7092e6b7db861673869c5d3282bf62d" }
+
+[dependencies.tokio]
+version = "1.5.0"
+features = ["full"] 
+
+[dependencies.twilight-util]
+version = "0.9.0"
+features = ["builder"]
