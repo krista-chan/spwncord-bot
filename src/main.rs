@@ -1,29 +1,29 @@
 #![feature(allocator_api)]
 
-use spwn::run_spwn;
-use std::{
-    error::Error,
-    sync::Arc,
-    time::{Duration, Instant, SystemTime},
-};
+use std::error::Error;
+use std::sync::Arc;
+use std::time::Duration;
+use std::time::Instant;
+use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use dotenv::dotenv;
 use futures::StreamExt;
-use std::time::UNIX_EPOCH;
+use spwn::run_spwn;
 use tokio::select;
+
 use twilight_embed_builder::{EmbedBuilder, EmbedFieldBuilder};
 use twilight_gateway::{cluster::ShardScheme, Cluster, Event, Intents};
 use twilight_http::Client;
-use twilight_model::{
-    application::{
-        callback::InteractionResponse,
-        command::{ChoiceCommandOptionData, CommandOption, CommandType},
-        interaction::application_command::CommandOptionValue,
-    },
-    channel::message::MessageFlags,
-    id::Id,
-};
-use twilight_util::builder::{command::CommandBuilder, CallbackDataBuilder};
+
+use twilight_util::builder::command::CommandBuilder;
+use twilight_util::builder::CallbackDataBuilder;
+
+use twilight_model::application::callback::*;
+use twilight_model::application::command::*;
+use twilight_model::application::interaction::application_command::CommandOptionValue;
+use twilight_model::channel::message::MessageFlags;
+use twilight_model::id::Id;
 
 const APP_ID: u64 = 944228600016674867;
 
