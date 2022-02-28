@@ -4,12 +4,13 @@ use spwn::run_spwn;
 use std::{
     error::Error,
     sync::Arc,
-    time::{Instant, SystemTime},
+    time::{Duration, Instant, SystemTime},
 };
 
 use dotenv::dotenv;
 use futures::StreamExt;
 use std::time::UNIX_EPOCH;
+use tokio::select;
 use twilight_embed_builder::{EmbedBuilder, EmbedFieldBuilder};
 use twilight_gateway::{cluster::ShardScheme, Cluster, Event, Intents};
 use twilight_http::Client;
@@ -75,6 +76,7 @@ async fn register_commands(client: Arc<Client>) -> Result<(), Box<dyn Error + Se
             ..Default::default()
         }))
         .build(),
+        CommandBuilder::new("Evaluate SPWN".into(), String::new(), CommandType::Message).build(),
     ];
 
     client
@@ -130,7 +132,7 @@ async fn handle_event(
                             .title("Ping")
                             .field(pong_field)
                             .field(rtt_field)
-                            .color(0x3F_59_8C)
+                            .color(0xBF_42_F5)
                             .build()?;
 
                         client
@@ -157,28 +159,38 @@ async fn handle_event(
 
                         let src = &cmd.data.options[0].value;
 
-                        if let CommandOptionValue::String(spwn_source) = src {
-                            let embed = match run_spwn(spwn_source.clone(), vec![".".into()]) {
-                                Ok(out) => EmbedBuilder::new()
-                                    .title("SPWN")
-                                    .color(0x78_F5_42)
-                                    .description(format!("`SUCCESS` ```ansi\n{}\n```", out[0])),
-                                Err(out) => EmbedBuilder::new()
-                                    .title("SPWN | Error")
-                                    .color(0xF5_42_45)
-                                    .description(format!("`ERROR` ```ansi\n{}\n```", out)),
-                            }
-                            .build()?;
-
-                            client
-                                .interaction(Id::new(APP_ID))
-                                .update_interaction_original(&cmd.token)
-                                .embeds(Some(&[embed]))?
-                                .exec()
-                                .await?;
+                        if let CommandOptionValue::String(spwn_source) = src.clone() {
+                            eval_fmt_spwn(client, spwn_source, &cmd.token).await?;
                         } else {
                             unreachable!()
                         }
+                    }
+                    "Evaluate SPWN" => {
+                        let cont = cmd
+                            .data
+                            .resolved
+                            .unwrap()
+                            .messages
+                            .into_iter()
+                            .next()
+                            .unwrap()
+                            .1
+                            .content;
+
+                        let res = InteractionResponse::DeferredChannelMessageWithSource(
+                            CallbackDataBuilder::new()
+                                .flags(MessageFlags::LOADING)
+                                .content("Running...".into())
+                                .build(),
+                        );
+
+                        client
+                            .interaction(Id::new(APP_ID))
+                            .interaction_callback(cmd.id, &cmd.token, &res)
+                            .exec()
+                            .await?;
+
+                        eval_fmt_spwn(client, cont, &cmd.token).await?;
                     }
                     _ => (),
                 }
@@ -190,6 +202,72 @@ async fn handle_event(
         }
         _ => {}
     }
+
+    Ok(())
+}
+
+pub async fn eval_fmt_spwn(
+    client: Arc<Client>,
+    source: String,
+    token: &str,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    dbg!(&source);
+    select! {
+        s = tokio::task::spawn_blocking(move || run_spwn(source, vec![".".into()])) => {
+            let embed = match s? {
+                Ok(out) => {
+                    let lines_trun = out[0].lines();
+
+                    let ellipses = if lines_trun.clone().count() > 10 {
+                        "..."
+                    } else {
+                        ""
+                    };
+
+                    let fmt: String = lines_trun.take(10).map(|s| s.to_owned() + "\n").collect();
+
+                    EmbedBuilder::new()
+                    .title("SPWN")
+                    .color(0x78_F5_42)
+                    .description(format!("`SUCCESS` ```ansi\n{}{}\n```", fmt, ellipses))},
+                Err(out) => {
+                    let lines_trun = out.lines();
+
+                    let ellipses = if lines_trun.clone().count() > 10 {
+                        "..."
+                    } else {
+                        ""
+                    };
+
+                    let fmt: String = lines_trun.take(10).map(|s| s.to_owned() + "\n").collect();
+                    EmbedBuilder::new()
+                    .title("SPWN | Error")
+                    .color(0xF5_42_45)
+                    .description(format!("`ERROR` ```ansi\n{}{}\n```", fmt, ellipses))},
+            }
+            .build()?;
+
+            client
+                .interaction(Id::new(APP_ID))
+                .update_interaction_original(&token)
+                .embeds(Some(&[embed]))?
+                .exec()
+                .await?;
+        }
+        _ = tokio::task::spawn_blocking(|| std::thread::sleep(Duration::from_secs(5))) => {
+            let embed = EmbedBuilder::new()
+                .title("SPWN | Error")
+                .color(0xF5_42_45)
+                .description(format!("`ERROR`\nREPL timed out after 5 seconds.")).build()?;
+
+            client
+                .interaction(Id::new(APP_ID))
+                .update_interaction_original(&token)
+                .embeds(Some(&[embed]))?
+                .exec()
+                .await?;
+        }
+    };
 
     Ok(())
 }

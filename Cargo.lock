@@ -373,22 +373,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "flaarino"
-version = "0.1.0"
-dependencies = [
- "dotenv",
- "futures",
- "spwn",
- "tokio",
- "twilight-embed-builder",
- "twilight-gateway",
- "twilight-http",
- "twilight-interactions",
- "twilight-model",
- "twilight-util",
-]
-
-[[package]]
 name = "flate2"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1650,6 +1634,22 @@ dependencies = [
  "pckp",
  "shared",
  "termcolor",
+]
+
+[[package]]
+name = "spwncord"
+version = "0.1.0"
+dependencies = [
+ "dotenv",
+ "futures",
+ "spwn",
+ "tokio",
+ "twilight-embed-builder",
+ "twilight-gateway",
+ "twilight-http",
+ "twilight-interactions",
+ "twilight-model",
+ "twilight-util",
 ]
 
 [[package]]
