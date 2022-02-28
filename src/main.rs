@@ -226,10 +226,16 @@ pub async fn eval_fmt_spwn(
 
                     let fmt: String = lines_trun.take(10).map(|s| s.to_owned() + "\n").collect();
 
+                    let code_fmt = if fmt.is_empty() {
+                        ""
+                    } else {
+                        "ansi"
+                    };
+
                     EmbedBuilder::new()
                     .title("SPWN")
                     .color(0x78_F5_42)
-                    .description(format!("`SUCCESS` ```ansi\n{}{}\n```", fmt, ellipses))},
+                    .description(format!("`SUCCESS` ```{}\n{}{}\n```", code_fmt, fmt, ellipses))},
                 Err(out) => {
                     let lines_trun = out.lines();
 
